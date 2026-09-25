@@ -1,0 +1,129 @@
+<div class="prodotti-page">
+  <mat-card class="prodotti-card">
+    <header class="prodotti-header">
+      <div class="header-left">
+        <app-back-to-menu></app-back-to-menu>
+        <h2>Prodotti</h2>
+      </div>
+      <button mat-flat-button color="primary" routerLink="/prodotti/nuovo">
+        <mat-icon>add</mat-icon>
+        Nuovo prodotto
+      </button>
+    </header>
+
+    @if (caricamento) {
+      <div class="stato-caricamento">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Caricamento prodotti...</p>
+      </div>
+    } @else if (errore) {
+      <div class="stato-errore">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ errore }}</p>
+      </div>
+    } @else {
+      <div class="filtri-bar">
+        <mat-form-field appearance="outline" class="filtro-ricerca">
+          <mat-label>Cerca prodotto</mat-label>
+          <input matInput [(ngModel)]="filtroRicerca" placeholder="Nome prodotto..." />
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-select">
+          <mat-label>Categoria</mat-label>
+          <mat-select [(ngModel)]="filtroCategoriaId">
+            <mat-option [value]="null">Tutte</mat-option>
+            @for (categoria of categorie; track categoria.id) {
+              <mat-option [value]="categoria.id">{{ categoria.nome }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-select">
+          <mat-label>Stato</mat-label>
+          <mat-select [(ngModel)]="filtroStato">
+            <mat-option value="tutti">Tutti</mat-option>
+            <mat-option value="attivo">Attivo</mat-option>
+            <mat-option value="esaurito">Esaurito</mat-option>
+            <mat-option value="disattivo">Disattivo</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        @if (filtriAttivi) {
+          <button mat-icon-button (click)="resetFiltri()" matTooltip="Azzera filtri" class="filtro-reset">
+            <mat-icon>filter_alt_off</mat-icon>
+          </button>
+        }
+      </div>
+
+      <table mat-table [dataSource]="prodottiFiltrati" class="prodotti-table">
+        <ng-container matColumnDef="immagine">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let prodotto">
+            @if (prodotto.immagineUrl) {
+              <img [src]="prodotto.immagineUrl" [alt]="prodotto.nome" class="prodotto-thumb" />
+            } @else {
+              <div class="prodotto-thumb placeholder">
+                <mat-icon>restaurant_menu</mat-icon>
+              </div>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="nome">
+          <th mat-header-cell *matHeaderCellDef>Nome</th>
+          <td mat-cell *matCellDef="let prodotto">{{ prodotto.nome }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="categoria">
+          <th mat-header-cell *matHeaderCellDef>Categoria</th>
+          <td mat-cell *matCellDef="let prodotto">{{ nomeCategoria(prodotto.categoriaId) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="prezzo">
+          <th mat-header-cell *matHeaderCellDef>Prezzo</th>
+          <td mat-cell *matCellDef="let prodotto">{{ prodotto.prezzo | currency:'EUR' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="costoProduzione">
+          <th mat-header-cell *matHeaderCellDef>Costo produzione</th>
+          <td mat-cell *matCellDef="let prodotto">{{ prodotto.costoProduzione | currency:'EUR' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="stato">
+          <th mat-header-cell *matHeaderCellDef>Stato</th>
+          <td mat-cell *matCellDef="let prodotto">
+            @if (!prodotto.attivo) {
+              <mat-chip class="badge disattivo">Disattivo</mat-chip>
+            } @else if (prodotto.esaurito) {
+              <mat-chip class="badge esaurito">Esaurito</mat-chip>
+            } @else {
+              <mat-chip class="badge attivo">Attivo</mat-chip>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="azioni">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let prodotto" class="azioni-cell">
+            <button mat-icon-button [routerLink]="['/prodotti', prodotto.id]" matTooltip="Modifica">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="eliminaProdotto(prodotto.id)" matTooltip="Elimina">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="colonne"></tr>
+        <tr mat-row *matRowDef="let row; columns: colonne;"></tr>
+      </table>
+
+      @if (prodotti.length === 0) {
+        <p class="stato-vuoto">Nessun prodotto ancora inserito.</p>
+      } @else if (prodottiFiltrati.length === 0) {
+        <p class="stato-vuoto">Nessun prodotto corrisponde ai filtri selezionati.</p>
+      }
+    }
+  </mat-card>
+</div>

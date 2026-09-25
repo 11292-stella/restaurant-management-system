@@ -1,0 +1,181 @@
+.statistiche-page {
+  min-height: calc(100vh - 64px);
+  padding: 2rem;
+  background-image: linear-gradient(135deg, rgba(90, 30, 80, 0.08), rgba(60, 30, 100, 0.08));
+  display: flex;
+  justify-content: center;
+}
+
+.statistiche-card {
+  width: 100%;
+  max-width: 1000px;
+  padding: 1.5rem 2rem 2rem;
+  border-radius: 12px;
+}
+
+.statistiche-header {
+  margin-bottom: 1.5rem;
+
+  h2 {
+    font-weight: 600;
+    color: #4a2f5c;
+    margin: 0;
+  }
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stato-caricamento,
+.stato-errore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 0;
+  color: #666;
+}
+
+.stato-errore {
+  color: #d32f2f;
+
+  mat-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.stato-vuoto {
+  text-align: center;
+  color: #888;
+  padding: 2rem 0;
+}
+
+.riepilogo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.riepilogo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.25rem 1rem;
+  border-radius: 10px;
+  background: #f5f0f8;
+  text-align: center;
+
+  mat-icon {
+    color: var(--mat-sys-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .valore {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #4a2f5c;
+  }
+
+  .etichetta {
+    font-size: 0.8rem;
+    color: #777;
+  }
+
+  &.fc-alto .valore {
+    color: #c62828;
+  }
+
+  &.fc-normale .valore {
+    color: #e65100;
+  }
+
+  &.fc-ottimo .valore {
+    color: #2e7d32;
+  }
+}
+
+.sezione-titolo {
+  color: #4a2f5c;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.nota {
+  color: #888;
+  font-size: 0.82rem;
+  margin: 0 0 1.5rem;
+  max-width: 640px;
+}
+
+.grafico-barre {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.riga-grafico {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.riga-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.riga-nome {
+  font-weight: 600;
+  color: #4a2f5c;
+}
+
+.riga-dettaglio {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.barra-container {
+  position: relative;
+  height: 22px;
+  background: #f0e6f5;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.barra {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+
+  &.fc-ottimo {
+    background: linear-gradient(90deg, #66bb6a, #2e7d32);
+  }
+
+  &.fc-normale {
+    background: linear-gradient(90deg, #ffb74d, #e65100);
+  }
+
+  &.fc-alto {
+    background: linear-gradient(90deg, #ef5350, #c62828);
+  }
+}
+
+.barra-valore {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a2f5c;
+}

@@ -1,0 +1,21 @@
+@"
+# Build output .NET
+bin/
+obj/
+*.user
+
+# Risultati test
+BasedSecurityDotnet.ApiTests/TestResults/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+
+# Secrets
+appsettings.Development.json
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+"@ | Out-File -FilePath .gitignore -Encoding utf8

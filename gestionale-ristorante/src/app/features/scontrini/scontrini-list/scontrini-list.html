@@ -1,0 +1,67 @@
+<div class="scontrini-page">
+  <mat-card class="scontrini-card">
+    <header class="scontrini-header">
+      <div class="header-left">
+        <app-back-to-menu></app-back-to-menu>
+        <h2>Scontrini</h2>
+      </div>
+    </header>
+
+    @if (caricamento) {
+      <div class="stato-caricamento">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Caricamento scontrini...</p>
+      </div>
+    } @else if (errore) {
+      <div class="stato-errore">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ errore }}</p>
+      </div>
+    } @else {
+      <table mat-table [dataSource]="scontrini" class="scontrini-table">
+        <ng-container matColumnDef="dataEmissione">
+          <th mat-header-cell *matHeaderCellDef>Data emissione</th>
+          <td mat-cell *matCellDef="let scontrino">{{ scontrino.dataEmissione | date:'dd/MM/yyyy HH:mm' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="ordineId">
+          <th mat-header-cell *matHeaderCellDef>Ordine</th>
+          <td mat-cell *matCellDef="let scontrino">
+            <a [routerLink]="['/ordini', scontrino.ordineId]" class="ordine-link">#{{ scontrino.ordineId }}</a>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="importo">
+          <th mat-header-cell *matHeaderCellDef>Importo</th>
+          <td mat-cell *matCellDef="let scontrino">{{ scontrino.importo | currency:'EUR' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="metodo">
+          <th mat-header-cell *matHeaderCellDef>Metodo</th>
+          <td mat-cell *matCellDef="let scontrino">
+            <mat-chip class="badge metodo-{{ scontrino.metodoPagamento }}">
+              <mat-icon>{{ scontrino.metodoPagamento === 0 ? 'payments' : 'credit_card' }}</mat-icon>
+              {{ metodiLabel[scontrino.metodoPagamento] }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="azioni">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let scontrino" class="azioni-cell">
+            <button mat-icon-button color="warn" (click)="eliminaScontrino(scontrino.id)" matTooltip="Elimina">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="colonne"></tr>
+        <tr mat-row *matRowDef="let row; columns: colonne;"></tr>
+      </table>
+
+      @if (scontrini.length === 0) {
+        <p class="stato-vuoto">Nessuno scontrino ancora emesso.</p>
+      }
+    }
+  </mat-card>
+</div>

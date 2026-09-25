@@ -1,0 +1,45 @@
+@use 'sass:map';
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$magenta-palette,
+        tertiary: mat.$violet-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+
+  --mat-sys-primary: #{map.get(mat.$magenta-palette, 50)};
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #{map.get(mat.$magenta-palette, 40)};
+  --mat-sys-on-primary-container: #ffffff;
+
+  --mat-sys-tertiary: #{map.get(mat.$violet-palette, 50)};
+  --mat-sys-on-tertiary: #ffffff;
+
+  // Variabili custom per il gradiente della toolbar
+  --app-toolbar-start: #{map.get(mat.$magenta-palette, 40)};
+  --app-toolbar-end: #{map.get(mat.$violet-palette, 40)};
+}
+
+body {
+  color-scheme: light;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+}

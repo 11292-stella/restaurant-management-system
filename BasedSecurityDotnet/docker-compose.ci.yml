@@ -1,0 +1,93 @@
+# ==============================================================================
+# OVERRIDE SOLO PER LA CI — non sostituisce docker-compose.yml, si somma ad
+# esso (docker compose -f docker-compose.yml -f docker-compose.ci.yml ...).
+# ------------------------------------------------------------------------------
+# Perche' serve: il runner GitLab gira sullo stesso Docker Desktop del tuo
+# ambiente di sviluppo locale. Se docker-compose.yml (quello "normale") e'
+# ancora su in background mentre la pipeline parte, le porte pubblicate
+# (5433 per postgres, 5231 per backend) collidono con quelle della pipeline
+# -> "port is already allocated".
+# ------------------------------------------------------------------------------
+# postgres: rimappata su 15433. Non ci serve raggiungerla dall'host: backend
+# parla con postgres attraverso la rete Docker interna (Host=postgres nella
+# connection string), non tramite la porta pubblicata — la rimappiamo solo
+# per evitare la collisione, non perche' ci serva davvero usarla da fuori.
+# ------------------------------------------------------------------------------
+# !override — NUOVO, FIX DEFINITIVO. Le due versioni precedenti di questo
+# file non funzionavano per lo stesso motivo: quando Docker Compose unisce
+# piu' file (-f docker-compose.yml -f docker-compose.ci.yml), le liste come
+# "ports" vengono CONCATENATE di default, non sostituite. Quindi:
+#   - "ports: []" si univa a ["5433:5432"] e restava ["5433:5432"] (nessun
+#     cambiamento reale: concatenare una lista vuota non toglie nulla)
+#   - "ports: ["15433:5432"]" (senza !override) si univa a ["5433:5432"] e
+#     diventava ["5433:5432", "15433:5432"] — DUE porte pubblicate, quindi
+#     Postgres tentava comunque il bind sulla 5433 e falliva lo stesso.
+# Il tag "!override" e' l'estensione YAML che Compose offre apposta per
+# dire "qui non concatenare, sostituisci l'intera lista del file base" —
+# e' l'unico modo per rimappare davvero una porta in un file di override.
+# ------------------------------------------------------------------------------
+# backend: stessa storia — !override anche qui, porta 15231 invece di 5231.
+# ==============================================================================
+services:
+  postgres:
+    ports: !override
+      - "15433:5432"
+
+  backend:
+    ports: !override
+      - "15231:8080"
+
+  # ============================================================================
+  # tests — NUOVO. Esegue i 42 test API dentro un container a se', evitando
+  # il problema del volume che affliggeva il vecchio approccio in
+  # .gitlab-ci.yml (docker run -v "$CI_PROJECT_DIR":/src ...).
+  # ------------------------------------------------------------------------------
+  # PERCHE' NON SI PUO' USARE UN VOLUME QUI (-v):
+  # Il job CI parla con Docker tramite il socket dell'host (quello che
+  # abbiamo montato in config.toml), non ha un demone Docker proprio. Quando
+  # il job lancia "docker run -v $CI_PROJECT_DIR:/src", quel path esiste
+  # SOLO dentro il filesystem del container del job — ma chi esegue
+  # davvero la mount e' il demone Docker dell'HOST (Windows), che quel path
+  # non lo conosce. Risultato: monta una cartella vuota, "dotnet test" non
+  # trova il progetto ("Project file does not exist").
+  # ------------------------------------------------------------------------------
+  # LA SOLUZIONE — build invece di mount:
+  # "docker compose build" (e quindi anche questo servizio) NON soffre dello
+  # stesso problema: il client Docker legge i file in locale (nel
+  # filesystem del job, dove il codice e' stato davvero clonato da git) e li
+  # invia al demone come un archivio tar attraverso il socket — infatti e'
+  # esattamente cosi' che il backend si e' sempre costruito senza problemi
+  # in questa pipeline. Qui usiamo lo stesso principio: un'immagine con
+  # "COPY . ." (non un mount) porta dentro il codice dei test in modo
+  # affidabile a prescindere da dove gira il demone.
+  # ------------------------------------------------------------------------------
+  # context: "." — la cartella radice del repo (dove sta anche
+  # BasedSecurityDotnet.ApiTests/), stesso livello di questo file.
+  # dockerfile_inline — scrive un Dockerfile al volo dentro il compose
+  # file stesso, senza bisogno di un file Dockerfile separato nel repo:
+  # comodo per un'immagine che serve solo qui, in CI.
+  # ------------------------------------------------------------------------------
+  # API_BASE_URL: "http://backend:8080" — a differenza del passo di attesa
+  # nello script CI (che usa host.docker.internal, perche' quello gira nel
+  # container del job), questo container e' un servizio del docker-compose
+  # STESSO, quindi raggiunge backend con il suo hostname interno, come fa
+  # gia' backend con "postgres" nella connection string.
+  # ------------------------------------------------------------------------------
+  # command — sovrascrive il comando del container, invece di scriverlo nel
+  # Dockerfile: piu' facile da leggere/modificare qui che dentro una
+  # stringa YAML annidata. Il logger JUnit richiede il pacchetto NuGet
+  # JunitXml.TestLogger nel progetto ApiTests (vedi nota nel README della
+  # pipeline / messaggio precedente).
+  # ============================================================================
+  tests:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM mcr.microsoft.com/dotnet/sdk:10.0
+        WORKDIR /src
+        COPY . .
+    environment:
+      API_BASE_URL: "http://backend:8080"
+    depends_on:
+      - backend
+    command: ["dotnet", "test", "BasedSecurityDotnet.ApiTests", "--logger", "junit;LogFilePath=/src/TestResults/results.xml"]

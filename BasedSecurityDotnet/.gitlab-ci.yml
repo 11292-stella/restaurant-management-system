@@ -1,0 +1,199 @@
+# ==============================================================================
+# WORKFLOW — decide QUANDO la pipeline deve partire (a monte di tutti i job)
+# Stessa logica anti-doppione usata nel progetto Cypress: se il branch ha
+# gia' una MR collegata, salto la pipeline "push semplice" perche' ne parte
+# comunque una equivalente come "merge_request_event". Evita due pipeline
+# identiche sullo stesso commit.
+# ==============================================================================
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - when: always
+
+stages:
+  - test
+
+# ==============================================================================
+# VARIABILI
+# ------------------------------------------------------------------------------
+# POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB / JWT_KEY / JWT_ISSUER /
+# JWT_AUDIENCE NON sono qui: sono le stesse chiavi che docker-compose.yml
+# legge con ${VAR} e che in locale mettevi nel tuo .env (mai committato).
+# In CI vanno definite come CI/CD Variables del progetto GitLab
+# (Settings > CI/CD > Variables), marcate come "Protected" e "Masked" dove
+# possibile (es. password, JWT key). GitLab le inietta automaticamente
+# nell'ambiente del job: "docker compose up" le trova da sole, non serve
+# generare un file .env a mano.
+# ------------------------------------------------------------------------------
+# COMPOSE_PROJECT: nome di progetto esplicito per docker compose. Senza
+# questo, compose usa il nome della cartella di checkout (puo' cambiare/
+# contenere caratteri strani in CI), rendendo il nome della rete Docker
+# imprevedibile. Fissandolo, la rete si chiama sempre "basedsecurity_default"
+# e possiamo prevedere in anticipo l'hostname "backend" al suo interno.
+# ==============================================================================
+variables:
+  COMPOSE_PROJECT: "basedsecurity"
+
+# ==============================================================================
+# JOB UNICO — BUILD BACKEND + DB EFFIMERO + 42 TEST API
+# ------------------------------------------------------------------------------
+# image: docker:24-cli — contiene solo il CLIENT Docker (non il demone), piu'
+# il plugin "docker compose" (v2, comando con lo spazio, non l'ipendata
+# "docker-compose"). Il client parla con il demone dell'HOST tramite il
+# socket montato nel runner (config.toml -> volumes ->
+# "/var/run/docker.sock:/var/run/docker.sock"). Per questo NON serve un
+# servizio Docker-in-Docker (dind): i container che lanciamo qui sono
+# "fratelli" del job, non "figli" annidati in un demone isolato.
+# ------------------------------------------------------------------------------
+# host.docker.internal — su Docker Desktop (Windows/Mac) e' un hostname
+# speciale, iniettato automaticamente in OGNI container Linux, che risolve
+# sempre all'IP dell'host. Ci serve perche' il job e i container di
+# docker-compose girano fianco a fianco sullo stesso demone: raggiungiamo
+# la porta pubblicata del backend (5231) esattamente come farebbe il tuo
+# browser/Postman in locale, non serve nessun flag aggiuntivo.
+# ==============================================================================
+jobEsegui_test_api:
+  stage: test
+  image: docker:24-cli
+  tags:
+    - docker
+
+  # ----------------------------------------------------------------------------
+  # CACHE — pacchetti NuGet
+  # Stesso principio di node_modules nel progetto Cypress: la cartella
+  # .nuget/packages/ dentro il progetto (non la solita ~/.nuget di sistema,
+  # che il runner perderebbe a ogni job) viene salvata tra una run e l'altra
+  # e montata nel container dotnet usa-e-getta piu' sotto (NUGET_PACKAGES).
+  # ----------------------------------------------------------------------------
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .nuget/packages/
+
+  script:
+    # --------------------------------------------------------------------------
+    # 1) Su e costruisci backend + postgres, come in locale.
+    # --build ricostruisce l'immagine del backend se il Dockerfile o il
+    # codice sono cambiati; -d la manda in background cosi' lo script
+    # prosegue subito al passo successivo.
+    # -f docker-compose.ci.yml aggiunge l'override che rimappa le porte
+    # (vedi commenti in quel file): evita conflitti con un docker-compose
+    # locale di sviluppo ancora acceso sullo stesso Docker Desktop del
+    # runner. Backend ora raggiungibile su 15231, non piu' 5231.
+    # Elenco esplicito "postgres backend" (non tutti i servizi): il terzo
+    # servizio "tests" (in docker-compose.ci.yml) va lanciato a mano, in
+    # sequenza precisa, col comando "run" al passo 3 qui sotto — non deve
+    # partire da solo insieme a questo "up".
+    # --------------------------------------------------------------------------
+    - docker compose -f docker-compose.yml -f docker-compose.ci.yml -p $COMPOSE_PROJECT up -d --build postgres backend
+
+    # --------------------------------------------------------------------------
+    # 2) Attendi che il backend risponda davvero, prima di lanciare i test.
+    # Il backend non ha un healthcheck dedicato in docker-compose.yml (solo
+    # postgres ce l'ha, con "depends_on: condition: service_healthy"): il
+    # container backend puo' quindi risultare "avviato" mentre .NET sta
+    # ancora facendo le migration/il boot. Interroghiamo /api/Categoria
+    # ogni 2 secondi per max 60 secondi: qualsiasi risposta HTTP (anche 401,
+    # non abbiamo un token) significa che il server e' su e accetta
+    # connessioni — curl senza -f considera "successo" anche gli errori
+    # HTTP, fallisce solo su connection refused/timeout.
+    # --------------------------------------------------------------------------
+    - apk add --no-cache curl
+    - >
+      echo "Attendo che il backend risponda su host.docker.internal:15231..." &&
+      for i in $(seq 1 30); do
+        if curl -s -o /dev/null http://host.docker.internal:15231/api/Categoria; then
+          echo "Backend pronto dopo ${i} tentativi.";
+          break;
+        fi;
+        if [ "$i" = "30" ]; then
+          echo "Backend non ha risposto entro 60s, abort.";
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml -p $COMPOSE_PROJECT logs backend;
+          exit 1;
+        fi;
+        sleep 2;
+      done
+
+    # --------------------------------------------------------------------------
+    # 3) Lancia i 42 test nel servizio "tests" (docker-compose.ci.yml).
+    # ------------------------------------------------------------------------
+    # PERCHE' NON PIU' "docker run -v $CI_PROJECT_DIR:/src" (versione
+    # precedente, rotta): quel comando montava un volume dal path del JOB
+    # container, ma il demone Docker che esegue davvero il mount e' quello
+    # dell'HOST — path che li' non esiste. Risultato: /src vuoto, "Project
+    # file does not exist". "docker compose run" invece usa il servizio
+    # "tests", che COSTRUISCE un'immagine con "COPY . ." (il codice viene
+    # incluso nell'immagine via build, non montato) — stesso meccanismo,
+    # gia' verificato funzionante, con cui si e' sempre costruito backend.
+    # ------------------------------------------------------------------------
+    # --build: ricostruisce l'immagine dei test se il codice e' cambiato
+    # (analogo a --build sull'up del passo 1).
+    # --name: nome fisso e prevedibile, ci serve per il "docker cp" subito
+    # dopo — SENZA --rm: se il container venisse rimosso subito alla fine
+    # del run, "docker cp" non avrebbe piu' nulla da cui copiare. Lo rimuove
+    # comunque "docker compose down -v" nell'after_script piu' sotto.
+    # -T: disabilita l'allocazione di un terminale interattivo — il job CI
+    # non ne ha uno, "run" lo pretenderebbe di default e darebbe errore.
+    # ------------------------------------------------------------------------
+    # TEST_EXIT — catturiamo il codice di uscita di "run" (0 = tutti i test
+    # passati) SENZA interrompere lo script se e' diverso da zero (niente
+    # "set -e" qui): dobbiamo comunque arrivare al "docker cp" per
+    # recuperare il report anche quando i test falliscono, e poi uscire
+    # noi stessi con quel codice, cosi' GitLab segna il job come fallito
+    # se davvero lo e' stato.
+    # ------------------------------------------------------------------------
+    # docker cp — copia il file dei risultati DAL container AL filesystem
+    # del job. A differenza di "-v", "docker cp" trasmette i dati in
+    # streaming attraverso il socket stesso (come fa "build" per il
+    # contesto in salita): non soffre del problema di path del punto 3,
+    # funziona sempre a prescindere da dove gira davvero il demone.
+    # ------------------------------------------------------------------------
+    # docker rm -f ... all'inizio — NUOVO. Avendo un nome fisso (--name),
+    # questo container non segue lo schema automatico che "docker compose
+    # down" riconosce come "suo" per il servizio "tests" (compose lo segnala
+    # infatti come "orphan container"): se una run precedente e' fallita
+    # PRIMA del down (o il down non l'ha ripulito per questo motivo), il
+    # nome resta occupato e la run successiva si scontra con "Conflict: the
+    # container name is already in use". Lo rimuoviamo noi stessi qui,
+    # prima di crearne uno nuovo — "|| true" perche' la primissima volta
+    # (o dopo un down riuscito) il container non esiste ancora, ed e' giusto
+    # cosi'.
+    # --------------------------------------------------------------------------
+    - >
+      TEST_EXIT=0;
+      docker rm -f ${COMPOSE_PROJECT}_tests || true;
+      docker compose -f docker-compose.yml -f docker-compose.ci.yml -p $COMPOSE_PROJECT run --build --name ${COMPOSE_PROJECT}_tests -T tests || TEST_EXIT=$?;
+      mkdir -p TestResults;
+      docker cp ${COMPOSE_PROJECT}_tests:/src/TestResults/results.xml ./TestResults/results.xml || true;
+      exit $TEST_EXIT
+
+  # ----------------------------------------------------------------------------
+  # AFTER_SCRIPT — pulizia SEMPRE, anche se i test falliscono.
+  # down -v rimuove anche i volumi (il volume dati di postgres): ogni run
+  # riparte da un DB completamente vuoto, stesso motivo per cui in locale
+  # facevi "docker compose down -v" prima di ogni test manuale.
+  # after_script gira sempre, indipendentemente dall'esito dello "script"
+  # sopra — a differenza di metterlo in coda allo stesso script, dove non
+  # verrebbe mai raggiunto se "dotnet test" fallisce ed esce con codice != 0.
+  # ------------------------------------------------------------------------------
+  # --remove-orphans — NUOVO. "down" da solo non tocca "basedsecurity_tests"
+  # (nome fisso, fuori dallo schema che compose associa al servizio "tests"
+  # — vedi nota sopra); questo flag gli dice esplicitamente di ripulire
+  # anche i container "orfani" legati al progetto, come rete di sicurezza
+  # in piu' oltre al "docker rm -f" di apertura del passo 3.
+  # ----------------------------------------------------------------------------
+  after_script:
+    - docker compose -f docker-compose.yml -f docker-compose.ci.yml -p $COMPOSE_PROJECT down -v --remove-orphans
+
+  # ----------------------------------------------------------------------------
+  # ARTIFACT — report JUnit
+  # "when: always" cattura il report anche quando i test falliscono (non
+  # solo sui run verdi): e' proprio nei run rossi che serve vedere il
+  # dettaglio nella tab "Tests" della pipeline.
+  # ----------------------------------------------------------------------------
+  artifacts:
+    when: always
+    expire_in: 30 days
+    reports:
+      junit: TestResults/results.xml

@@ -1,0 +1,35 @@
+<div class="categoria-form-page">
+  <mat-card class="categoria-form-card">
+    <div class="form-header">
+      <app-back-to-menu></app-back-to-menu>
+      <h2>{{ modificaId ? 'Modifica categoria' : 'Nuova categoria' }}</h2>
+    </div>
+
+    @if (errore) {
+      <div class="stato-errore">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ errore }}</p>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-grid">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Nome</mat-label>
+        <input matInput formControlName="nome" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Descrizione</mat-label>
+        <textarea matInput formControlName="descrizione" rows="3"></textarea>
+      </mat-form-field>
+
+      <div class="azioni full-width">
+        <button mat-stroked-button type="button" routerLink="/categorie">Annulla</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+          <mat-icon>save</mat-icon>
+          Salva
+        </button>
+      </div>
+    </form>
+  </mat-card>
+</div>

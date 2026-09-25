@@ -1,0 +1,147 @@
+.prodotti-page {
+  min-height: calc(100vh - 64px);
+  padding: 2rem;
+  background-image: linear-gradient(135deg, rgba(90, 30, 80, 0.08), rgba(60, 30, 100, 0.08));
+  display: flex;
+  justify-content: center;
+}
+
+.prodotti-card {
+  width: 100%;
+  max-width: 1100px;
+  padding: 1.5rem 2rem 2rem;
+  border-radius: 12px;
+}
+
+.prodotti-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+
+  h2 {
+    font-weight: 600;
+    color: #4a2f5c;
+    margin: 0;
+  }
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filtri-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  mat-form-field {
+    // form-field Material aggiunge sempre uno spazio sotto per l'hint/errore:
+    // qui non serve, i filtri sono su una riga compatta
+    margin-bottom: -1.25em;
+  }
+}
+
+.filtro-ricerca {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.filtro-select {
+  flex: 0 1 160px;
+  min-width: 140px;
+}
+
+.filtro-reset {
+  color: #888;
+  margin-bottom: 1.25em;
+
+  &:hover {
+    color: #d32f2f;
+  }
+}
+
+.stato-caricamento,
+.stato-errore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 0;
+  color: #666;
+}
+
+.stato-errore {
+  color: #d32f2f;
+
+  mat-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.stato-vuoto {
+  text-align: center;
+  color: #888;
+  padding: 2rem 0 0;
+}
+
+.prodotti-table {
+  width: 100%;
+
+  th.mat-mdc-header-cell {
+    color: #4a2f5c;
+    font-weight: 600;
+  }
+}
+
+.prodotto-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+
+  &.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0e6f5;
+    color: var(--mat-sys-primary);
+
+    mat-icon {
+      font-size: 1.4rem;
+      width: 1.4rem;
+      height: 1.4rem;
+    }
+  }
+}
+
+.azioni-cell {
+  white-space: nowrap;
+}
+
+.badge {
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  &.attivo {
+    --mdc-chip-elevated-container-color: #e3f5e6;
+    color: #2e7d32;
+  }
+
+  &.esaurito {
+    --mdc-chip-elevated-container-color: #fff3e0;
+    color: #e65100;
+  }
+
+  &.disattivo {
+    --mdc-chip-elevated-container-color: #f5f5f5;
+    color: #757575;
+  }
+}

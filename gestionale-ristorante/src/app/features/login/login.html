@@ -1,0 +1,31 @@
+
+
+<div class="login-page">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-card-title>Accesso gestionale</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput formControlName="password" type="password" />
+        </mat-form-field>
+
+        @if (errore) {
+          <p class="errore">{{ errore }}</p>
+        }
+
+        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid" class="full-width">
+          Accedi
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

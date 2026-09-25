@@ -1,0 +1,101 @@
+.pagamento-dialog {
+  width: 420px;
+  max-width: 90vw;
+}
+
+h2[mat-dialog-title] {
+  color: #4a2f5c;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  padding: 24px 24px 0;
+}
+
+.carta-preview {
+  margin: 0 24px 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 14px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1a1f71 0%, #2d3fa0 60%, #4a5fd6 100%);
+  box-shadow: 0 8px 20px rgba(26, 31, 113, 0.35);
+  font-family: 'Courier New', monospace;
+
+  &.mastercard {
+    background: linear-gradient(135deg, #eb001b 0%, #b8272f 50%, #f79e1b 100%);
+    box-shadow: 0 8px 20px rgba(235, 0, 27, 0.3);
+  }
+}
+
+.carta-riga-alta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+
+  mat-icon {
+    transform: rotate(90deg);
+  }
+
+  .circuito {
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-style: italic;
+  }
+}
+
+.carta-numero {
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  margin-bottom: 1.25rem;
+}
+
+.carta-riga-bassa {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.avviso-test {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #666;
+  background: #f5f0f8;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--mat-sys-primary);
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.esito-errore {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: -0.5rem;
+}
+
+.spinner-bottone {
+  display: inline-block;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}

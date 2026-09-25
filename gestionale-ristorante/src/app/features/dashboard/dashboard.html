@@ -1,0 +1,50 @@
+<mat-toolbar class="app-toolbar">
+  <mat-icon class="brand-icon">restaurant</mat-icon>
+  <span class="brand-title">Gestionale Ristorante</span>
+  <span class="spacer"></span>
+  <button mat-button (click)="onLogout()" class="logout-btn">
+    <mat-icon>logout</mat-icon>
+    Esci
+  </button>
+</mat-toolbar>
+
+<div class="dashboard-content">
+  <h2 class="welcome-title">Cosa vuoi gestire oggi?</h2>
+
+  <div class="cards-grid">
+    <mat-card routerLink="/prodotti" class="nav-card">
+      <mat-card-content>
+        <mat-icon>restaurant_menu</mat-icon>
+        <span>Prodotti</span>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card routerLink="/categorie" class="nav-card">
+      <mat-card-content>
+        <mat-icon>category</mat-icon>
+        <span>Categorie</span>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card routerLink="/ordini" class="nav-card">
+      <mat-card-content>
+        <mat-icon>receipt_long</mat-icon>
+        <span>Ordini</span>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card routerLink="/scontrini" class="nav-card">
+      <mat-card-content>
+        <mat-icon>point_of_sale</mat-icon>
+        <span>Scontrini</span>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card routerLink="/statistiche" class="nav-card">
+      <mat-card-content>
+        <mat-icon>insights</mat-icon>
+        <span>Statistiche</span>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

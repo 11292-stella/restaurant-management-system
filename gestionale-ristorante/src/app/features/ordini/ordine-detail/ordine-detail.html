@@ -1,0 +1,80 @@
+<div class="ordine-detail-page">
+  <mat-card class="ordine-card">
+    @if (errore) {
+      <div class="stato-errore">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ errore }}</p>
+      </div>
+    } @else if (ordine) {
+      <header class="ordine-header">
+        <div class="header-left">
+          <app-back-to-menu></app-back-to-menu>
+          <div>
+            <h2>Ordine #{{ ordine.id }} — {{ ordine.cliente }}</h2>
+            <p class="ordine-data">{{ ordine.dataOra | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
+        <mat-chip class="badge stato-{{ ordine.statoOrdine }}">{{ statiLabel[ordine.statoOrdine] }}</mat-chip>
+      </header>
+
+      <table mat-table [dataSource]="ordine.righe" class="righe-table">
+        <ng-container matColumnDef="prodotto">
+          <th mat-header-cell *matHeaderCellDef>Prodotto</th>
+          <td mat-cell *matCellDef="let riga">{{ riga.prodotto.nome }}</td>
+          <td mat-footer-cell *matFooterCellDef>Totale</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantita">
+          <th mat-header-cell *matHeaderCellDef>Quantità</th>
+          <td mat-cell *matCellDef="let riga">{{ riga.quantita }}</td>
+          <td mat-footer-cell *matFooterCellDef></td>
+        </ng-container>
+
+        <ng-container matColumnDef="prezzoUnitario">
+          <th mat-header-cell *matHeaderCellDef>Prezzo unitario</th>
+          <td mat-cell *matCellDef="let riga">{{ riga.prezzoUnitario | currency:'EUR' }}</td>
+          <td mat-footer-cell *matFooterCellDef></td>
+        </ng-container>
+
+        <ng-container matColumnDef="subtotale">
+          <th mat-header-cell *matHeaderCellDef>Subtotale</th>
+          <td mat-cell *matCellDef="let riga">{{ riga.prezzoUnitario * riga.quantita | currency:'EUR' }}</td>
+          <td mat-footer-cell *matFooterCellDef class="totale-cell">{{ ordine.totale | currency:'EUR' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="colonne"></tr>
+        <tr mat-row *matRowDef="let row; columns: colonne;"></tr>
+        <tr mat-footer-row *matFooterRowDef="colonne"></tr>
+      </table>
+
+      <div class="scontrino-section">
+        @if (scontrino) {
+          <div class="scontrino-emesso">
+            <mat-icon>check_circle</mat-icon>
+            <span>
+              Scontrino emesso il {{ scontrino.dataEmissione | date:'dd/MM/yyyy HH:mm' }}
+              ({{ metodiLabel[scontrino.metodoPagamento] }})
+            </span>
+          </div>
+        } @else {
+          <p class="scontrino-assente">Nessuno scontrino emesso per questo ordine.</p>
+          <div class="scontrino-azioni">
+            <button mat-stroked-button color="primary" (click)="emettiScontrino(0)">
+              <mat-icon>payments</mat-icon>
+              Emetti scontrino (Contanti)
+            </button>
+            <button mat-stroked-button color="primary" (click)="pagaConCarta()">
+              <mat-icon>credit_card</mat-icon>
+              Emetti scontrino (Carta)
+            </button>
+          </div>
+        }
+      </div>
+
+      <a mat-button routerLink="/ordini" class="torna-link">
+        <mat-icon>arrow_back</mat-icon>
+        Torna alla lista
+      </a>
+    }
+  </mat-card>
+</div>

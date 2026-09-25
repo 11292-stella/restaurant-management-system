@@ -1,0 +1,71 @@
+<div class="pagamento-dialog">
+  <h2 mat-dialog-title>Pagamento con carta (simulato)</h2>
+
+  <div class="carta-preview" [class.mastercard]="circuito === 'Mastercard'">
+    <div class="carta-riga-alta">
+      <mat-icon>wifi</mat-icon>
+      <span class="circuito">{{ circuito }}</span>
+    </div>
+    <div class="carta-numero">{{ form.get('numeroCarta')?.value || '•••• •••• •••• ••••' }}</div>
+    <div class="carta-riga-bassa">
+      <span class="carta-titolare">{{ form.get('titolare')?.value || 'NOME COGNOME' }}</span>
+      <span class="carta-scadenza">{{ form.get('scadenza')?.value || 'MM/AA' }}</span>
+    </div>
+  </div>
+
+  <mat-dialog-content>
+    <p class="avviso-test">
+      <mat-icon>info</mat-icon>
+      Ambiente di test: nessun dato reale viene inviato, serve solo a simulare il pagamento.
+    </p>
+
+    <form [formGroup]="form" class="form-grid">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Titolare carta</mat-label>
+        <input matInput formControlName="titolare" placeholder="Mario Rossi" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Numero carta</mat-label>
+        <input
+          matInput
+          formControlName="numeroCarta"
+          placeholder="4242 4242 4242 4242"
+          maxlength="19"
+          (input)="onNumeroCartaInput($event)"
+        />
+        <mat-icon matSuffix>credit_card</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Scadenza</mat-label>
+        <input matInput formControlName="scadenza" placeholder="MM/AA" maxlength="5" (input)="onScadenzaInput($event)" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>CVV</mat-label>
+        <input matInput formControlName="cvv" placeholder="123" maxlength="3" type="password" />
+      </mat-form-field>
+    </form>
+
+    @if (esitoErrore) {
+      <p class="esito-errore">
+        <mat-icon>error_outline</mat-icon>
+        {{ esitoErrore }}
+      </p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button type="button" (click)="onAnnulla()" [disabled]="elaborazione">Annulla</button>
+    <button mat-flat-button color="primary" type="button" (click)="onPaga()" [disabled]="form.invalid || elaborazione">
+      @if (elaborazione) {
+        <mat-spinner diameter="18" class="spinner-bottone"></mat-spinner>
+        Elaborazione...
+      } @else {
+        <mat-icon>lock</mat-icon>
+        Paga {{ data.importo | currency:'EUR' }}
+      }
+    </button>
+  </mat-dialog-actions>
+</div>

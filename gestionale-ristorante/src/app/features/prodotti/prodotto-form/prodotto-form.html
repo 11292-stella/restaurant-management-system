@@ -1,0 +1,73 @@
+<div class="prodotto-form-page">
+  <mat-card class="prodotto-form-card">
+    <div class="form-header">
+      <app-back-to-menu></app-back-to-menu>
+      <h2>{{ modificaId ? 'Modifica prodotto' : 'Nuovo prodotto' }}</h2>
+    </div>
+
+    @if (errore) {
+      <div class="stato-errore">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ errore }}</p>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-grid">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Nome</mat-label>
+        <input matInput formControlName="nome" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Descrizione</mat-label>
+        <textarea matInput formControlName="descrizione" rows="3"></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Prezzo</mat-label>
+        <input matInput formControlName="prezzo" type="number" step="0.01" />
+        <span matTextPrefix>€&nbsp;</span>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Costo produzione</mat-label>
+        <input matInput formControlName="costoProduzione" type="number" step="0.01" />
+        <span matTextPrefix>€&nbsp;</span>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Immagine (URL)</mat-label>
+        <input matInput formControlName="immagineUrl" />
+        <mat-icon matSuffix>image</mat-icon>
+      </mat-form-field>
+
+      @if (form.get('immagineUrl')?.value) {
+        <div class="anteprima-immagine full-width">
+          <img [src]="form.get('immagineUrl')?.value" alt="Anteprima prodotto" />
+        </div>
+      }
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Categoria</mat-label>
+        <mat-select formControlName="categoriaId">
+          @for (categoria of categorie; track categoria.id) {
+            <mat-option [value]="categoria.id">{{ categoria.nome }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="toggles full-width">
+        <mat-slide-toggle formControlName="attivo">Attivo</mat-slide-toggle>
+        <mat-slide-toggle formControlName="esaurito">Esaurito</mat-slide-toggle>
+      </div>
+
+      <div class="azioni full-width">
+        <button mat-stroked-button type="button" routerLink="/prodotti">Annulla</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+          <mat-icon>save</mat-icon>
+          Salva
+        </button>
+      </div>
+    </form>
+  </mat-card>
+</div>

@@ -1,0 +1,135 @@
+.ordine-detail-page {
+  min-height: calc(100vh - 64px);
+  padding: 2rem;
+  background-image: linear-gradient(135deg, rgba(90, 30, 80, 0.08), rgba(60, 30, 100, 0.08));
+  display: flex;
+  justify-content: center;
+}
+
+.ordine-card {
+  width: 100%;
+  max-width: 900px;
+  padding: 1.5rem 2rem 2rem;
+  border-radius: 12px;
+}
+
+.ordine-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+
+  h2 {
+    font-weight: 600;
+    color: #4a2f5c;
+    margin: 0 0 0.25rem;
+  }
+
+  .ordine-data {
+    color: #888;
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+.header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.stato-errore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 0;
+  color: #d32f2f;
+
+  mat-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.badge {
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  &.stato-0 {
+    --mdc-chip-elevated-container-color: #f5f5f5;
+    color: #757575;
+  }
+
+  &.stato-1 {
+    --mdc-chip-elevated-container-color: #fff3e0;
+    color: #e65100;
+  }
+
+  &.stato-2 {
+    --mdc-chip-elevated-container-color: #e3f0fd;
+    color: #1565c0;
+  }
+
+  &.stato-3 {
+    --mdc-chip-elevated-container-color: #e3f5e6;
+    color: #2e7d32;
+  }
+
+  &.stato-4 {
+    --mdc-chip-elevated-container-color: #fdecea;
+    color: #c62828;
+  }
+}
+
+.righe-table {
+  width: 100%;
+  margin-bottom: 1.5rem;
+
+  th.mat-mdc-header-cell {
+    color: #4a2f5c;
+    font-weight: 600;
+  }
+
+  .mat-mdc-footer-row {
+    font-weight: 600;
+    color: #4a2f5c;
+  }
+
+  .totale-cell {
+    font-weight: 700;
+  }
+}
+
+.scontrino-section {
+  border-top: 1px solid #eee;
+  padding-top: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.scontrino-emesso {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2e7d32;
+
+  mat-icon {
+    color: #2e7d32;
+  }
+}
+
+.scontrino-assente {
+  color: #666;
+  margin-bottom: 0.75rem;
+}
+
+.scontrino-azioni {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.torna-link {
+  color: #4a2f5c;
+}

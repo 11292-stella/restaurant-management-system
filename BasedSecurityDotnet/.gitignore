@@ -1,0 +1,11 @@
+bin/
+obj/
+*.user
+BasedSecurityDotnet.ApiTests/TestResults/
+.vs/
+.vscode/
+appsettings.Development.json
+*.env
+.DS_Store
+Thumbs.db
+.env

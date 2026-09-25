@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BasedSecurityDotnet.ApiTests/BasedSecurityDotnet.ApiTests.csproj" />
+  <Project Path="BasedSecurityDotnet/BasedSecurityDotnet.csproj" />
+</Solution>

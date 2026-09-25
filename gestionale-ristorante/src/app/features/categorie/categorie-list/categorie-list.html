@@ -1,0 +1,73 @@
+<div class="categorie-page">
+  <mat-card class="categorie-card">
+    <header class="categorie-header">
+      <div class="header-left">
+        <app-back-to-menu></app-back-to-menu>
+        <h2>Categorie</h2>
+      </div>
+      <button mat-flat-button color="primary" routerLink="/categorie/nuovo">
+        <mat-icon>add</mat-icon>
+        Nuova categoria
+      </button>
+    </header>
+
+    @if (caricamento) {
+      <div class="stato-caricamento">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Caricamento categorie...</p>
+      </div>
+    } @else if (errore) {
+      <div class="stato-errore">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ errore }}</p>
+      </div>
+    } @else {
+      <div class="filtri-bar">
+        <mat-form-field appearance="outline" class="filtro-ricerca">
+          <mat-label>Cerca categoria</mat-label>
+          <input matInput [(ngModel)]="filtroRicerca" placeholder="Nome o descrizione..." />
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        @if (filtroRicerca) {
+          <button mat-icon-button (click)="resetFiltri()" matTooltip="Azzera ricerca" class="filtro-reset">
+            <mat-icon>filter_alt_off</mat-icon>
+          </button>
+        }
+      </div>
+
+      <table mat-table [dataSource]="categorieFiltrate" class="categorie-table">
+        <ng-container matColumnDef="nome">
+          <th mat-header-cell *matHeaderCellDef>Nome</th>
+          <td mat-cell *matCellDef="let categoria">{{ categoria.nome }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="descrizione">
+          <th mat-header-cell *matHeaderCellDef>Descrizione</th>
+          <td mat-cell *matCellDef="let categoria">{{ categoria.descrizione || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="azioni">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let categoria" class="azioni-cell">
+            <button mat-icon-button [routerLink]="['/categorie', categoria.id]" matTooltip="Modifica">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="eliminaCategoria(categoria.id)" matTooltip="Elimina">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="colonne"></tr>
+        <tr mat-row *matRowDef="let row; columns: colonne;"></tr>
+      </table>
+
+      @if (categorie.length === 0) {
+        <p class="stato-vuoto">Nessuna categoria ancora inserita.</p>
+      } @else if (categorieFiltrate.length === 0) {
+        <p class="stato-vuoto">Nessuna categoria corrisponde alla ricerca.</p>
+      }
+    }
+  </mat-card>
+</div>

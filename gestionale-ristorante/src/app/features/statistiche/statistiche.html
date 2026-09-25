@@ -1,0 +1,74 @@
+<div class="statistiche-page">
+  <mat-card class="statistiche-card">
+    <header class="statistiche-header">
+      <div class="header-left">
+        <app-back-to-menu></app-back-to-menu>
+        <h2>Statistiche vendite e costi</h2>
+      </div>
+    </header>
+
+    @if (caricamento) {
+      <div class="stato-caricamento">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Calcolo statistiche...</p>
+      </div>
+    } @else if (errore) {
+      <div class="stato-errore">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ errore }}</p>
+      </div>
+    } @else if (righe.length === 0) {
+      <p class="stato-vuoto">Nessuna vendita registrata ancora: emetti qualche scontrino per vedere le statistiche.</p>
+    } @else {
+      <div class="riepilogo-grid">
+        <div class="riepilogo-card">
+          <mat-icon>payments</mat-icon>
+          <span class="valore">{{ ricavoTotale | currency:'EUR' }}</span>
+          <span class="etichetta">Ricavo totale</span>
+        </div>
+        <div class="riepilogo-card">
+          <mat-icon>receipt_long</mat-icon>
+          <span class="valore">{{ costoTotale | currency:'EUR' }}</span>
+          <span class="etichetta">Costo di produzione</span>
+        </div>
+        <div class="riepilogo-card">
+          <mat-icon>trending_up</mat-icon>
+          <span class="valore">{{ margineTotale | currency:'EUR' }}</span>
+          <span class="etichetta">Margine</span>
+        </div>
+        <div class="riepilogo-card" [class]="'fc-' + classeFoodCost(foodCostMedio)">
+          <mat-icon>pie_chart</mat-icon>
+          <span class="valore">{{ foodCostMedio | number:'1.1-1' }}%</span>
+          <span class="etichetta">Food cost medio</span>
+        </div>
+      </div>
+
+      <h3 class="sezione-titolo">Food cost per prodotto</h3>
+      <p class="nota">
+        Stima semplificata: incrocia il prezzo di vendita registrato negli ordini con il costo di
+        produzione <strong>attuale</strong> del prodotto (non tiene conto di eventuali variazioni di
+        costo nel tempo). Ordini annullati esclusi.
+      </p>
+
+      <div class="grafico-barre">
+        @for (riga of righe; track riga.prodottoId) {
+          <div class="riga-grafico">
+            <div class="riga-info">
+              <span class="riga-nome">{{ riga.nome }}</span>
+              <span class="riga-dettaglio">
+                {{ riga.quantitaVenduta }} venduti · ricavo {{ riga.ricavo | currency:'EUR' }} · margine {{ riga.margine | currency:'EUR' }}
+              </span>
+            </div>
+            <div class="barra-container">
+              <div
+                class="barra fc-{{ classeFoodCost(riga.foodCostPercent) }}"
+                [style.width.%]="riga.foodCostPercent > 100 ? 100 : riga.foodCostPercent"
+              ></div>
+              <span class="barra-valore">{{ riga.foodCostPercent | number:'1.0-1' }}%</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </mat-card>
+</div>

@@ -1,0 +1,47 @@
+# ============================================================
+# .gitignore generale del monorepo
+# (ogni progetto ha anche il suo .gitignore specifico)
+# ============================================================
+
+# Segreti e configurazioni locali
+.env
+*.env
+!.env.example
+appsettings.Development.json
+
+# .NET
+bin/
+obj/
+TestResults/
+.vs/
+*.user
+
+# Angular / Node
+node_modules/
+dist/
+.angular/
+
+# Flutter
+build/
+.dart_tool/
+.flutter-plugins-dependencies
+android/local.properties
+
+# Robot Framework: risultati delle esecuzioni (contengono token e path locali)
+robot-tests/results/
+output.xml
+log.html
+report.html
+playwright-log.txt
+
+# Python
+venv/
+.venv/
+__pycache__/
+
+# IDE e sistema
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
