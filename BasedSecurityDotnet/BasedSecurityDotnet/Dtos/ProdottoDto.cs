@@ -7,8 +7,9 @@ public class ProdottoDto
     [Required(ErrorMessage = "Il nome è obbligatorio")]
     public string Nome { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "La descrizione è obbligatoria")]
-    public string Descrizione { get; set; } = string.Empty;
+    // Facoltativa, come nel form Angular (prima [Required] rifiutava "" con 400:
+    // frontend e backend non erano allineati — trovato dai test E2E Robot)
+    public string? Descrizione { get; set; }
 
     [Required(ErrorMessage = "Il prezzo è obbligatorio")]
     [Range(typeof(decimal), "0.01", "79228162514264337593543950335", ParseLimitsInInvariantCulture = true, ErrorMessage = "Il prezzo deve essere maggiore di zero")]

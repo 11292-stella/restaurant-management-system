@@ -54,11 +54,13 @@ public class ProdottoController : ControllerBase
 
         var prodotto = new Prodotto
         {
-            Nome = dto.Nome,
-            Descrizione = dto.Descrizione,
+            // Trim sui testi; descrizione facoltativa (colonna non nullable -> stringa vuota);
+            // URL immagine vuoto -> null (la lista mostra il placeholder)
+            Nome = dto.Nome.Trim(),
+            Descrizione = dto.Descrizione?.Trim() ?? string.Empty,
             Prezzo = dto.Prezzo,
             CostoProduzione = dto.CostoProduzione,
-            ImmagineUrl = dto.ImmagineUrl,
+            ImmagineUrl = string.IsNullOrWhiteSpace(dto.ImmagineUrl) ? null : dto.ImmagineUrl.Trim(),
             Attivo = dto.Attivo,
             Esaurito = dto.Esaurito,
             CategoriaId = dto.CategoriaId,
@@ -88,11 +90,11 @@ public class ProdottoController : ControllerBase
             throw new NotFoundException($"Categoria con id {dto.CategoriaId} non trovata.");
         }
 
-        prodotto.Nome = dto.Nome;
-        prodotto.Descrizione = dto.Descrizione;
+        prodotto.Nome = dto.Nome.Trim();
+        prodotto.Descrizione = dto.Descrizione?.Trim() ?? string.Empty;
         prodotto.Prezzo = dto.Prezzo;
         prodotto.CostoProduzione = dto.CostoProduzione;
-        prodotto.ImmagineUrl = dto.ImmagineUrl;
+        prodotto.ImmagineUrl = string.IsNullOrWhiteSpace(dto.ImmagineUrl) ? null : dto.ImmagineUrl.Trim();
         prodotto.Attivo = dto.Attivo;
         prodotto.Esaurito = dto.Esaurito;
         prodotto.CategoriaId = dto.CategoriaId;
@@ -111,6 +113,19 @@ public class ProdottoController : ControllerBase
         if (prodotto == null)
         {
             throw new NotFoundException($"Prodotto con id {id} non trovato.");
+        }
+
+        // Un prodotto presente in ordini passati non si elimina (rovinerebbe lo storico ordini/scontrini):
+        // meglio disattivarlo (Attivo = false), cosi' sparisce dal menu ma gli ordini restano corretti.
+        // (Il DB ha anche OnDelete Restrict su OrdineRiga -> Prodotto: senza questo controllo darebbe 500)
+        bool giaOrdinato = await _context.OrdineRighe.AnyAsync(r => r.ProdottoId == id);
+        if (giaOrdinato)
+        {
+            return Conflict(new
+            {
+                message = $"Impossibile eliminare '{prodotto.Nome}': e' presente in ordini gia' effettuati. Disattivalo invece di eliminarlo.",
+                dataErrore = DateTime.UtcNow
+            });
         }
 
         _context.Prodotti.Remove(prodotto);

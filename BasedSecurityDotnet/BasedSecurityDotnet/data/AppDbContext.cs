@@ -41,6 +41,24 @@ namespace BasedSecurityDotnet.data
             modelBuilder.Entity<Scontrino>()
                 .HasIndex(s => s.OrdineId)
                 .IsUnique();
+
+            // Una categoria con prodotti NON si cancella a cascata:
+            // il DB rifiuta la DELETE finché la categoria contiene prodotti.
+            // (Prima: convenzione EF per FK obbligatoria = Cascade → spariva mezzo menu.
+            //  Bug trovato dal test E2E "Categoria Con Prodotti Non Si Puo' Eliminare")
+            modelBuilder.Entity<Prodotto>()
+                .HasOne(p => p.Categoria)
+                .WithMany(c => c.Prodotti)
+                .HasForeignKey(p => p.CategoriaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Un prodotto già ordinato NON si cancella a cascata:
+            // altrimenti sparirebbero le righe degli ordini/scontrini passati (storico incoerente)
+            modelBuilder.Entity<OrdineRiga>()
+                .HasOne(r => r.Prodotto)
+                .WithMany()
+                .HasForeignKey(r => r.ProdottoId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

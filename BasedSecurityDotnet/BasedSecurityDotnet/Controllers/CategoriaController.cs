@@ -46,10 +46,19 @@ public class CategoriaController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Categoria>> Create(CategoriaDto dto)
     {
+        // Nome univoco (senza distinguere maiuscole/minuscole): due "Colazione"
+        // renderebbero ambigui i filtri e il form prodotto
+        if (await EsisteCategoriaConNome(dto.Nome))
+        {
+            return NomeGiaUsato(dto.Nome);
+        }
+
         var categoria = new Categoria
         {
-            Nome = dto.Nome,
-            Descrizione = dto.Descrizione
+            // Trim: "Pizza " e "Pizza" non diventano due categorie diverse.
+            // Descrizione facoltativa: se manca si salva stringa vuota (colonna non nullable, niente migration)
+            Nome = dto.Nome.Trim(),
+            Descrizione = dto.Descrizione?.Trim() ?? string.Empty
         };
 
         _context.Categorie.Add(categoria);
@@ -71,8 +80,15 @@ public class CategoriaController : ControllerBase
             throw new NotFoundException($"Categoria con id {id} non trovata.");
         }
 
-        categoria.Nome = dto.Nome;
-        categoria.Descrizione = dto.Descrizione;
+        // Stesso controllo della Create, escludendo la categoria che sto modificando
+        // (rinominarla con il suo stesso nome, o cambiare solo maiuscole, e' permesso)
+        if (await EsisteCategoriaConNome(dto.Nome, escludiId: id))
+        {
+            return NomeGiaUsato(dto.Nome);
+        }
+
+        categoria.Nome = dto.Nome.Trim();
+        categoria.Descrizione = dto.Descrizione?.Trim() ?? string.Empty;
 
         await _context.SaveChangesAsync();
 
@@ -92,9 +108,40 @@ public class CategoriaController : ControllerBase
             throw new NotFoundException($"Categoria con id {id} non trovata.");
         }
 
+        // Non si elimina una categoria che contiene prodotti:
+        // 409 Conflict con un messaggio utile invece di cancellare tutto a cascata.
+        // (Il DB ha anche OnDelete Restrict: senza questo controllo risponderebbe 500 con errore di FK)
+        int numeroProdotti = await _context.Prodotti.CountAsync(p => p.CategoriaId == id);
+        if (numeroProdotti > 0)
+        {
+            return Conflict(new
+            {
+                message = $"Impossibile eliminare la categoria '{categoria.Nome}': contiene {numeroProdotti} prodotti. Spostali o eliminali prima.",
+                dataErrore = DateTime.UtcNow
+            });
+        }
+
         _context.Categorie.Remove(categoria);
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    // true se esiste gia' una categoria con lo stesso nome (spazi esterni e maiuscole ignorati)
+    private async Task<bool> EsisteCategoriaConNome(string nome, int? escludiId = null)
+    {
+        var nomeNormalizzato = nome.Trim().ToLower();
+        return await _context.Categorie.AnyAsync(c =>
+            c.Nome.ToLower() == nomeNormalizzato && (escludiId == null || c.Id != escludiId));
+    }
+
+    // 409 Conflict con lo stesso formato { message, dataErrore } degli altri errori
+    private ConflictObjectResult NomeGiaUsato(string nome)
+    {
+        return Conflict(new
+        {
+            message = $"Esiste gia' una categoria chiamata '{nome.Trim()}'.",
+            dataErrore = DateTime.UtcNow
+        });
     }
 }

@@ -37,6 +37,14 @@ export class OrdineDetail implements OnInit {
   ordine: Ordine | null = null;
   scontrino: Scontrino | null = null;
   errore: string | null = null;
+  // Errore dell'emissione scontrino: mostrato SOTTO i bottoni, senza nascondere l'ordine
+  // (prima un errore qui sostituiva tutta la pagina con "Errore durante l'emissione").
+  erroreScontrino: string | null = null;
+  // true mentre la POST dello scontrino e' in corso: blocca il doppio click
+  // (prima: doppio click = due POST, la seconda tornava 400 e la pagina mostrava solo l'errore)
+  emissione = false;
+
+  static readonly STATO_ANNULLATO = 4;
 
   readonly statiLabel = ['In attesa', 'In preparazione', 'Pronto', 'Consegnato', 'Annullato'];
   readonly metodiLabel = ['Contanti', 'Carta'];
@@ -71,7 +79,7 @@ export class OrdineDetail implements OnInit {
   // Lo scontrino viene emesso solo se il "pagamento" va a buon fine, così il
   // flusso è identico a quello reale ed è pronto per gli script di test E2E.
   pagaConCarta(): void {
-    if (!this.ordine) return;
+    if (!this.ordine || this.emissione || this.annullato) return;
 
     const dialogRef = this.dialog.open<PagamentoSimulato, PagamentoSimulatoData, boolean>(PagamentoSimulato, {
       data: { importo: this.ordine.totale },
@@ -84,12 +92,25 @@ export class OrdineDetail implements OnInit {
     });
   }
 
+  get annullato(): boolean {
+    return this.ordine?.statoOrdine === OrdineDetail.STATO_ANNULLATO;
+  }
+
   emettiScontrino(metodoPagamento: number): void {
-    if (!this.ordine) return;
+    if (!this.ordine || this.emissione || this.annullato) return;
+
+    this.emissione = true;
+    this.erroreScontrino = null;
 
     this.scontrinoService.create({ ordineId: this.ordine.id, metodoPagamento }).subscribe({
-      next: (scontrino) => (this.scontrino = scontrino),
-      error: () => (this.errore = "Errore durante l'emissione dello scontrino."),
+      next: (scontrino) => {
+        this.scontrino = scontrino;
+        this.emissione = false;
+      },
+      error: (err) => {
+        this.erroreScontrino = err.error?.message ?? "Errore durante l'emissione dello scontrino.";
+        this.emissione = false;
+      },
     });
   }
 }

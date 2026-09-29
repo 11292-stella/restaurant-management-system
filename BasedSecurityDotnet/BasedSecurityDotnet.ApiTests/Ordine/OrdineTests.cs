@@ -307,6 +307,70 @@ public async Task AggiornaStatoOrdine_ConIdEsistente_Ritorna200ENuovoStatoConfer
     Assert.NotNull(body);
     Assert.Equal(2, body.Value.GetProperty("statoOrdine").GetInt32());
 }
+
+    [Fact]
+    public async Task AggiornaStatoOrdine_ConStatoInesistente_Ritorna400EStatoInvariato()
+    {
+        var token = await GetAuthTokenAsync();
+        var headers = new Dictionary<string, string> { ["Authorization"] = $"Bearer {token}" };
+
+        var (prodottoId, _) = await CreaProdottoAsync(headers);
+        var creaResponse = await Request.PostAsync("/api/Ordine", new()
+        {
+            Headers = headers,
+            DataObject = new { Cliente = "Cliente Stato Invalido", Righe = new[] { new { ProdottoId = prodottoId, Quantita = 1 } } }
+        });
+        var creato = await creaResponse.JsonAsync();
+        Assert.NotNull(creato);
+        var ordineId = creato.Value.GetProperty("id").GetInt32();
+
+        // L'enum va da 0 (IN_ATTESA) a 4 (ANNULLATO): 99 non esiste.
+        // Prima veniva salvato lo stesso (un enum C# accetta qualsiasi intero).
+        var response = await Request.PutAsync($"/api/Ordine/{ordineId}/stato", new()
+        {
+            Headers = headers,
+            DataObject = 99
+        });
+        Assert.Equal((int)HttpStatusCode.BadRequest, response.Status);
+
+        var getResponse = await Request.GetAsync($"/api/Ordine/{ordineId}", new() { Headers = headers });
+        var body = await getResponse.JsonAsync();
+        Assert.NotNull(body);
+        Assert.Equal(0, body.Value.GetProperty("statoOrdine").GetInt32()); // resta IN_ATTESA
+    }
+
+    [Fact]
+    public async Task DeleteOrdine_ConScontrinoEmesso_Ritorna409EOrdineEScontrinoRestano()
+    {
+        var token = await GetAuthTokenAsync();
+        var headers = new Dictionary<string, string> { ["Authorization"] = $"Bearer {token}" };
+
+        var (prodottoId, _) = await CreaProdottoAsync(headers);
+        var creaResponse = await Request.PostAsync("/api/Ordine", new()
+        {
+            Headers = headers,
+            DataObject = new { Cliente = "Cliente Con Scontrino", Righe = new[] { new { ProdottoId = prodottoId, Quantita = 1 } } }
+        });
+        var creato = await creaResponse.JsonAsync();
+        Assert.NotNull(creato);
+        var ordineId = creato.Value.GetProperty("id").GetInt32();
+
+        var scontrinoResponse = await Request.PostAsync("/api/Scontrino", new()
+        {
+            Headers = headers,
+            DataObject = new { OrdineId = ordineId, MetodoPagamento = 0 }
+        });
+        Assert.Equal((int)HttpStatusCode.Created, scontrinoResponse.Status);
+
+        // Prima: 204 e lo scontrino spariva con l'ordine (cascade)
+        var deleteResponse = await Request.DeleteAsync($"/api/Ordine/{ordineId}", new() { Headers = headers });
+        Assert.Equal((int)HttpStatusCode.Conflict, deleteResponse.Status);
+
+        var getOrdine = await Request.GetAsync($"/api/Ordine/{ordineId}", new() { Headers = headers });
+        Assert.True(getOrdine.Ok);
+        var getScontrino = await Request.GetAsync($"/api/Scontrino/ordine/{ordineId}", new() { Headers = headers });
+        Assert.True(getScontrino.Ok);
+    }
 }
 
 // per avviare: dotnet test --filter "FullyQualifiedName~OrdineTests"

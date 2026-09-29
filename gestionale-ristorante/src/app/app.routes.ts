@@ -24,4 +24,7 @@ export const routes: Routes = [
   { path: 'ordini/:id', component: OrdineDetail, canActivate: [authGuard] },
   { path: 'scontrini', component: ScontriniList, canActivate: [authGuard] },
   { path: 'statistiche', component: Statistiche, canActivate: [authGuard] },
+  // URL inesistente -> dashboard (che a sua volta rimanda al login se non autenticati).
+  // Prima: pagina bianca. Deve restare l'ULTIMA route.
+  { path: '**', redirectTo: '' },
 ];

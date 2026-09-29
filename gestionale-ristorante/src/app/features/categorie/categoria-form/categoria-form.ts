@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CategoriaService } from '../../../core/services/categoria.service';
 import { MatCardModule } from '@angular/material/card';
@@ -7,7 +7,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { BackToMenu } from '../../../shared/back-to-menu/back-to-menu';
+
+// Validators.required considera valido "   " (non e' una stringa vuota):
+// questo validator rifiuta anche i valori fatti di soli spazi.
+function nonSoloSpazi(control: AbstractControl): ValidationErrors | null {
+  const valore = (control.value ?? '') as string;
+  return valore.trim().length === 0 ? { soloSpazi: true } : null;
+}
 
 @Component({
   selector: 'app-categoria-form',
@@ -29,6 +38,7 @@ export class CategoriaForm implements OnInit {
   form: FormGroup;
   modificaId: number | null = null;
   errore: string | null = null;
+  salvataggio = false;
 
   constructor(
     private fb: FormBuilder,
@@ -37,7 +47,7 @@ export class CategoriaForm implements OnInit {
     private router: Router
   ) {
     this.form = this.fb.group({
-      nome: ['', Validators.required],
+      nome: ['', [Validators.required, nonSoloSpazi]],
       descrizione: [''],
     });
   }
@@ -54,20 +64,33 @@ export class CategoriaForm implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.form.invalid) return;
+    // Guardia nel codice, non solo nel template: il [disabled] del bottone si aggiorna
+    // al giro successivo di change detection, e un doppio click veloce arriva prima
+    // (il test E2E "doppio click" creava ancora 2 prodotti con il solo [disabled])
+    if (this.form.invalid || this.salvataggio) return;
 
-    const dto = this.form.value;
+    // Spazi iniziali/finali tolti prima di inviare (evita "Pizza " e "Pizza" come nomi diversi)
+    const dto = {
+      nome: (this.form.value.nome ?? '').trim(),
+      descrizione: (this.form.value.descrizione ?? '').trim(),
+    };
 
-    if (this.modificaId) {
-      this.categoriaService.update(this.modificaId, dto).subscribe({
-        next: () => this.router.navigate(['/categorie']),
-        error: () => (this.errore = 'Errore durante il salvataggio.'),
-      });
-    } else {
-      this.categoriaService.create(dto).subscribe({
-        next: () => this.router.navigate(['/categorie']),
-        error: () => (this.errore = 'Errore durante il salvataggio.'),
-      });
-    }
+    // Salva disabilitato finche' la richiesta e' in corso: senza, un doppio click
+    // avrebbe inviato due richieste
+    this.salvataggio = true;
+    this.errore = null;
+
+    const richiesta: Observable<unknown> = this.modificaId
+      ? this.categoriaService.update(this.modificaId, dto)
+      : this.categoriaService.create(dto);
+
+    richiesta.subscribe({
+      next: () => this.router.navigate(['/categorie']),
+      error: (err: HttpErrorResponse) => {
+        // Messaggio del backend se c'e' (es. "Esiste gia' una categoria chiamata ..."), altrimenti generico
+        this.errore = err.error?.message ?? 'Errore durante il salvataggio.';
+        this.salvataggio = false;
+      },
+    });
   }
 }

@@ -9,3 +9,6 @@ appsettings.Development.json
 .DS_Store
 Thumbs.db
 .env
+auth.json
+auth.json
+PROGRESS.md

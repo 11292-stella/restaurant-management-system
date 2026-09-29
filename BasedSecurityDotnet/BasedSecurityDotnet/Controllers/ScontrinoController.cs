@@ -5,6 +5,7 @@ using BasedSecurityDotnet.data;
 using BasedSecurityDotnet.Dtos;
 using BasedSecurityDotnet.Exceptions;
 using BasedSecurityDotnet.Models;
+using BasedSecurityDotnet.Enumeration;
 
 namespace BasedSecurityDotnet.Controllers;
 
@@ -82,6 +83,13 @@ public class ScontrinoController : ControllerBase
         // (indice unico su OrdineId), ma controllarlo qui prima permette
         // di rispondere con un 400 chiaro invece di un errore SQL generico
         // che il GlobalExceptionMiddleware tradurrebbe in un 500 anonimo.
+        // Un ordine annullato non e' una vendita: niente scontrino.
+        // (Prima veniva emesso lo stesso. Bug trovato dal test E2E "Ordine Annullato Non Permette Lo Scontrino")
+        if (ordine.StatoOrdine == StatoOrdine.ANNULLATO)
+        {
+            throw new BadRequestException($"L'ordine {dto.OrdineId} e' annullato: non si puo' emettere lo scontrino.");
+        }
+
         bool esisteGia = await _context.Scontrini.AnyAsync(s => s.OrdineId == dto.OrdineId);
         if (esisteGia)
         {

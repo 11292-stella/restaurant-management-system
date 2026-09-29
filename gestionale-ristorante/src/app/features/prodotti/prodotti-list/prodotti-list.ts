@@ -16,6 +16,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { HttpErrorResponse } from '@angular/common/http';
 import { BackToMenu } from '../../../shared/back-to-menu/back-to-menu';
 
 type FiltroStato = 'tutti' | 'attivo' | 'esaurito' | 'disattivo';
@@ -58,7 +60,9 @@ export class ProdottiList implements OnInit {
 
   constructor(
     private prodottoService: ProdottoService,
-    private categoriaService: CategoriaService
+    private categoriaService: CategoriaService,
+    // Notifica temporanea (toast) per gli errori delle azioni: NON sostituisce la tabella
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
@@ -123,8 +127,12 @@ export class ProdottiList implements OnInit {
       next: () => {
         this.prodotti = this.prodotti.filter((p) => p.id !== id);
       },
-      error: () => {
-        this.errore = "Errore durante l'eliminazione.";
+      error: (err: HttpErrorResponse) => {
+        // Il backend risponde 409 con { message } se il prodotto e' gia' presente in ordini:
+        // mostriamo il suo messaggio ("disattivalo invece di eliminarlo") in un toast,
+        // senza usare "errore" (che nasconderebbe tutta la tabella: e' per gli errori di caricamento)
+        const messaggio = err.error?.message ?? "Errore durante l'eliminazione del prodotto.";
+        this.snackBar.open(messaggio, 'Chiudi', { duration: 6000 });
       },
     });
   }

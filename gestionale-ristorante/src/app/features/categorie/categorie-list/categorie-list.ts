@@ -11,6 +11,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { HttpErrorResponse } from '@angular/common/http';
 import { BackToMenu } from '../../../shared/back-to-menu/back-to-menu';
 
 @Component({
@@ -42,7 +44,11 @@ export class CategorieList implements OnInit {
 
   readonly colonne = ['nome', 'descrizione', 'azioni'];
 
-  constructor(private categoriaService: CategoriaService) {}
+  constructor(
+    private categoriaService: CategoriaService,
+    // Notifica temporanea (toast) per gli errori delle azioni: NON sostituisce la tabella
+    private snackBar: MatSnackBar,
+  ) {}
 
   ngOnInit(): void {
     this.categoriaService.getAll().subscribe({
@@ -71,14 +77,18 @@ export class CategorieList implements OnInit {
   }
 
   eliminaCategoria(id: number): void {
-    if (!confirm('Eliminare questa categoria? I prodotti collegati potrebbero causare un errore se non vengono prima spostati o eliminati.')) return;
+    if (!confirm('Eliminare questa categoria?')) return;
 
     this.categoriaService.delete(id).subscribe({
       next: () => {
         this.categorie = this.categorie.filter((c) => c.id !== id);
       },
-      error: () => {
-        this.errore = "Errore durante l'eliminazione. Probabilmente ci sono ancora prodotti collegati a questa categoria.";
+      error: (err: HttpErrorResponse) => {
+        // Il backend risponde 409 con { message } se la categoria contiene prodotti:
+        // mostriamo il SUO messaggio (dice quanti prodotti e cosa fare) in un toast,
+        // senza usare "errore" (che nasconderebbe tutta la tabella: e' per gli errori di caricamento)
+        const messaggio = err.error?.message ?? "Errore durante l'eliminazione della categoria.";
+        this.snackBar.open(messaggio, 'Chiudi', { duration: 6000 });
       },
     });
   }

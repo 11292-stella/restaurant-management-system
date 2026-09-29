@@ -13,14 +13,16 @@ ${MESSAGGIO_ERRORE}    p.errore
 
 *** Keywords ***
 Apri Browser Sul Login
-    New Browser    chromium    headless=${HEADLESS}
-    New Page       ${BASE_URL}/login
+    [Documentation]    Nuovo contesto pulito (il browser e' gia' aperto dal Suite Setup) sulla pagina di login.
+    New Context
+    New Page       ${BASE_URL}/login    wait_until=domcontentloaded
 
 Esegui Login
     [Arguments]    ${username}    ${password}
-    Fill Text    ${INPUT_USERNAME}    ${username}
-    Fill Text    ${INPUT_PASSWORD}    ${password}
-    Click        ${BOTTONE_ACCEDI}
+    Fill Text      ${INPUT_USERNAME}    ${username}
+    # Fill Secret + "$password" (senza graffe): il valore non viene scritto nel log
+    Fill Secret    ${INPUT_PASSWORD}    $password
+    Click          ${BOTTONE_ACCEDI}
 
 Verifica Di Essere Nella Dashboard
     Wait For Elements State    text=Esci    visible

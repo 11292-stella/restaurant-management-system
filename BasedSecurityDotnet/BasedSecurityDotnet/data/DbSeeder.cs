@@ -22,7 +22,7 @@ public static class DbSeeder
 
         db.Categorie.AddRange(colazione, pranzo, cena);
 
-        db.Prodotti.AddRange(new List<Prodotto>
+        var prodotti = new List<Prodotto>
         {
             new() { Nome = "Cornetto vuoto", Descrizione = "Cornetto sfogliato classico", Prezzo = 1.8m, Attivo = true, Esaurito = false, Categoria = colazione, ImmagineUrl = "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=500" },
             new() { Nome = "Cornetto alla crema", Descrizione = "Farcito con crema pasticcera", Prezzo = 2.2m, Attivo = true, Esaurito = false, Categoria = colazione, ImmagineUrl = "https://images.unsplash.com/photo-1623334044303-241021148842?w=500" },
@@ -33,7 +33,7 @@ public static class DbSeeder
             new() { Nome = "Bacon & Eggs Pancakes", Descrizione = "Pancakes salati con bacon croccante e uova", Prezzo = 7.0m, Attivo = true, Esaurito = false, Categoria = colazione, ImmagineUrl = "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500" },
             new() { Nome = "French Toast", Descrizione = "Pane brioche caramellato, frutti di bosco", Prezzo = 6.0m, Attivo = true, Esaurito = false, Categoria = colazione, ImmagineUrl = "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=500" },
             new() { Nome = "American Breakfast", Descrizione = "Uova, bacon, salsiccia, toast, fagioli", Prezzo = 8.5m, Attivo = true, Esaurito = false, Categoria = colazione, ImmagineUrl = "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=500" },
-            new() { Nome = "Pasta al pomodoro", Descrizione = "Pasta fresca, pomodoro San Marzano, basilico", Prezzo = 8.0m, Attivo = true, Esaurito = false, Categoria = pranzo, ImmagineUrl = "https://images.unsplash.com/photo-1621996346565-e3def616400c?w=500" },
+            new() { Nome = "Pasta al pomodoro", Descrizione = "Pasta fresca, pomodoro San Marzano, basilico", Prezzo = 8.0m, Attivo = true, Esaurito = false, Categoria = pranzo, ImmagineUrl = "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=500" },
             new() { Nome = "Lasagna alla bolognese", Descrizione = "Classica lasagna al forno", Prezzo = 9.5m, Attivo = true, Esaurito = false, Categoria = pranzo, ImmagineUrl = "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=500" },
             new() { Nome = "Cotoletta alla milanese", Descrizione = "Con contorno di patate", Prezzo = 11.0m, Attivo = true, Esaurito = false, Categoria = pranzo, ImmagineUrl = "https://images.unsplash.com/photo-1599921841143-819065a55cc6?w=500" },
             new() { Nome = "Pollo alla griglia", Descrizione = "Petto di pollo, verdure grigliate", Prezzo = 10.0m, Attivo = true, Esaurito = false, Categoria = pranzo, ImmagineUrl = "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=500" },
@@ -51,7 +51,16 @@ public static class DbSeeder
             new() { Nome = "Meat Lovers Pizza", Descrizione = "Pepperoni, salsiccia, bacon, manzo macinato", Prezzo = 13.0m, Attivo = true, Esaurito = false, Categoria = cena, ImmagineUrl = "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=500" },
             new() { Nome = "Mac & Cheese Pizza", Descrizione = "Base di formaggio, maccheroni al formaggio, briciole croccanti", Prezzo = 12.5m, Attivo = true, Esaurito = false, Categoria = cena, ImmagineUrl = "https://images.unsplash.com/photo-1541745537411-b8046dc6d66c?w=500" },
             new() { Nome = "Buffalo Chicken Pizza", Descrizione = "Pollo piccante buffalo, salsa ranch, sedano", Prezzo = 12.0m, Attivo = true, Esaurito = false, Categoria = cena, ImmagineUrl = "https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=500" },
-        });
+        };
+
+        // Costo di produzione stimato al 30% del prezzo: senza, statistiche e margini
+        // del gestionale partirebbero tutti da 0 (la colonna "Costo produzione" mostrava €0.00)
+        foreach (var prodotto in prodotti)
+        {
+            prodotto.CostoProduzione = Math.Round(prodotto.Prezzo * 0.30m, 2);
+        }
+
+        db.Prodotti.AddRange(prodotti);
 
         db.SaveChanges(); // EF inserisce prima le categorie, poi i prodotti con la FK giusta
     }

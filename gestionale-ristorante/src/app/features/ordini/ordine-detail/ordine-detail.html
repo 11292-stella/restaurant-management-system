@@ -56,18 +56,26 @@
               ({{ metodiLabel[scontrino.metodoPagamento] }})
             </span>
           </div>
+        } @else if (annullato) {
+          <p class="scontrino-assente">Ordine annullato: non si puo' emettere lo scontrino.</p>
         } @else {
           <p class="scontrino-assente">Nessuno scontrino emesso per questo ordine.</p>
           <div class="scontrino-azioni">
-            <button mat-stroked-button color="primary" (click)="emettiScontrino(0)">
+            <button mat-stroked-button color="primary" (click)="emettiScontrino(0)" [disabled]="emissione">
               <mat-icon>payments</mat-icon>
               Emetti scontrino (Contanti)
             </button>
-            <button mat-stroked-button color="primary" (click)="pagaConCarta()">
+            <button mat-stroked-button color="primary" (click)="pagaConCarta()" [disabled]="emissione">
               <mat-icon>credit_card</mat-icon>
               Emetti scontrino (Carta)
             </button>
           </div>
+          @if (erroreScontrino) {
+            <p class="errore-scontrino">
+              <mat-icon>error_outline</mat-icon>
+              {{ erroreScontrino }}
+            </p>
+          }
         }
       </div>
 

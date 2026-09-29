@@ -116,6 +116,14 @@ public class OrdineController : ControllerBase
     [HttpPut("{id}/stato")]
     public async Task<IActionResult> AggiornaStato(int id, [FromBody] StatoOrdine nuovoStato)
     {
+        // Un enum in C# accetta QUALSIASI intero: senza questo controllo PUT con body 99
+        // salvava uno stato inesistente e la UI mostrava una riga senza etichetta.
+        // (Bug trovato scrivendo i test sugli stati dell'ordine)
+        if (!Enum.IsDefined(nuovoStato))
+        {
+            throw new BadRequestException($"Stato ordine non valido: {(int)nuovoStato}.");
+        }
+
         var ordine = await _context.Ordini.FindAsync(id);
 
         if (ordine == null)
@@ -138,6 +146,19 @@ public class OrdineController : ControllerBase
         if (ordine == null)
         {
             throw new NotFoundException($"Ordine con id {id} non trovato.");
+        }
+
+        // Un ordine con scontrino emesso non si elimina: il cascade (convenzione EF su FK
+        // obbligatoria) cancellerebbe in silenzio anche lo scontrino, cioe' un documento fiscale.
+        // Stesso schema di categoria/prodotto: 409 con messaggio, prima va annullato lo scontrino.
+        bool haScontrino = await _context.Scontrini.AnyAsync(s => s.OrdineId == id);
+        if (haScontrino)
+        {
+            return Conflict(new
+            {
+                message = $"Impossibile eliminare l'ordine {id}: ha gia' uno scontrino emesso. Elimina prima lo scontrino.",
+                dataErrore = DateTime.UtcNow
+            });
         }
 
         // OnDelete(Cascade) sulle FK di OrdineRiga fa sì che eliminando l'Ordine

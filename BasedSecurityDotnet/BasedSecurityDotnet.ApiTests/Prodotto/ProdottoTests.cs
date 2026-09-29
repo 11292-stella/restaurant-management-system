@@ -109,6 +109,71 @@ public async Task CreateProdotto_ConDatiValidi_Ritorna200EProdottoCreato()
 }
 
 [Fact]
+public async Task CreateProdotto_SenzaDescrizione_Ritorna201EDescrizioneVuota()
+{
+    // La descrizione e' facoltativa (come nel form Angular): prima il DTO la rendeva obbligatoria
+    var token = await GetAuthTokenAsync();
+    var headers = new Dictionary<string, string> { ["Authorization"] = $"Bearer {token}" };
+
+    var categorieResponse = await Request.GetAsync("/api/Categoria", new() { Headers = headers });
+    var categorieBody = await categorieResponse.JsonAsync();
+    Assert.NotNull(categorieBody);
+    var categoriaId = categorieBody.Value[0].GetProperty("id").GetInt32();
+
+    var response = await Request.PostAsync("/api/Prodotto", new()
+    {
+        Headers = headers,
+        DataObject = new
+        {
+            Nome = $"Prodotto senza descrizione {Guid.NewGuid()}",
+            Descrizione = "",
+            Prezzo = 4.00,
+            CostoProduzione = 1.00,
+            CategoriaId = categoriaId,
+            Attivo = true,
+            Esaurito = false
+        }
+    });
+
+    Assert.Equal((int)HttpStatusCode.Created, response.Status);
+    var body = await response.JsonAsync();
+    Assert.NotNull(body);
+    Assert.Equal("", body.Value.GetProperty("descrizione").GetString());
+
+    await Request.DeleteAsync($"/api/Prodotto/{body.Value.GetProperty("id").GetInt32()}", new() { Headers = headers });
+}
+
+[Fact]
+public async Task CreateProdotto_ConPrezzoZero_Ritorna400()
+{
+    // Il DTO ha [Range(0.01, ...)] sul prezzo: un prodotto a 0 euro non e' valido
+    var token = await GetAuthTokenAsync();
+    var headers = new Dictionary<string, string> { ["Authorization"] = $"Bearer {token}" };
+
+    var categorieResponse = await Request.GetAsync("/api/Categoria", new() { Headers = headers });
+    var categorieBody = await categorieResponse.JsonAsync();
+    Assert.NotNull(categorieBody);
+    var categoriaId = categorieBody.Value[0].GetProperty("id").GetInt32();
+
+    var response = await Request.PostAsync("/api/Prodotto", new()
+    {
+        Headers = headers,
+        DataObject = new
+        {
+            Nome = $"Prodotto a zero {Guid.NewGuid()}",
+            Descrizione = "Non deve essere creato",
+            Prezzo = 0.00,
+            CostoProduzione = 0.00,
+            CategoriaId = categoriaId,
+            Attivo = true,
+            Esaurito = false
+        }
+    });
+
+    Assert.Equal((int)HttpStatusCode.BadRequest, response.Status);
+}
+
+[Fact]
 public async Task CreateProdotto_ConCategoriaIdInesistente_Ritorna404()
 {
     var token = await GetAuthTokenAsync();

@@ -1,12 +1,25 @@
 import { Component, Inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
+// Scadenza nel formato MM/AA gia' passata? Una carta vale fino all'ULTIMO giorno del mese indicato.
+// (Prima il pattern controllava solo il formato: "01/20" veniva accettata. Trovato dai test E2E.)
+export function cartaNonScaduta(control: AbstractControl): ValidationErrors | null {
+  const valore = control.value as string;
+  if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(valore ?? '')) return null; // il formato lo controlla gia' il pattern
+  const [mese, anno] = valore.split('/').map(Number);
+  const oggi = new Date();
+  const annoCorrente = oggi.getFullYear() % 100;
+  const meseCorrente = oggi.getMonth() + 1;
+  const scaduta = anno < annoCorrente || (anno === annoCorrente && mese < meseCorrente);
+  return scaduta ? { scaduta: true } : null;
+}
 
 export interface PagamentoSimulatoData {
   importo: number;
@@ -44,7 +57,7 @@ export class PagamentoSimulato {
     this.form = this.fb.group({
       titolare: ['', Validators.required],
       numeroCarta: ['', [Validators.required, Validators.pattern(/^\d{4} \d{4} \d{4} \d{4}$/)]],
-      scadenza: ['', [Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/\d{2}$/)]],
+      scadenza: ['', [Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/\d{2}$/), cartaNonScaduta]],
       cvv: ['', [Validators.required, Validators.pattern(/^\d{3}$/)]],
     });
   }

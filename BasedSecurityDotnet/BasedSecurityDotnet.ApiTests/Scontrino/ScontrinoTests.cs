@@ -204,6 +204,32 @@ public class ScontrinoTests : ApiTestBase
         var getResponse = await Request.GetAsync($"/api/Scontrino/{scontrinoId}", new() { Headers = headers });
         Assert.Equal((int)HttpStatusCode.NotFound, getResponse.Status);
     }
+
+    [Fact]
+    public async Task CreateScontrino_SuOrdineAnnullato_Ritorna400()
+    {
+        var token = await GetAuthTokenAsync();
+        var headers = new Dictionary<string, string> { ["Authorization"] = $"Bearer {token}" };
+
+        var ordineId = await CreaOrdineAsync(headers);
+        var statoResponse = await Request.PutAsync($"/api/Ordine/{ordineId}/stato", new()
+        {
+            Headers = headers,
+            DataObject = 4 // ANNULLATO
+        });
+        Assert.True(statoResponse.Ok);
+
+        // Un ordine annullato non e' una vendita: prima lo scontrino veniva emesso lo stesso
+        var response = await Request.PostAsync("/api/Scontrino", new()
+        {
+            Headers = headers,
+            DataObject = new { OrdineId = ordineId, MetodoPagamento = 0 }
+        });
+        Assert.Equal((int)HttpStatusCode.BadRequest, response.Status);
+
+        var getResponse = await Request.GetAsync($"/api/Scontrino/ordine/{ordineId}", new() { Headers = headers });
+        Assert.Equal((int)HttpStatusCode.NotFound, getResponse.Status);
+    }
 }
 
 //per avviare: dotnet test --filter "FullyQualifiedName~ScontrinoTests"

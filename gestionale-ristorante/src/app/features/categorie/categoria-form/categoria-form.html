@@ -25,7 +25,7 @@
 
       <div class="azioni full-width">
         <button mat-stroked-button type="button" routerLink="/categorie">Annulla</button>
-        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || salvataggio">
           <mat-icon>save</mat-icon>
           Salva
         </button>

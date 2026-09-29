@@ -1,8 +1,10 @@
 *** Settings ***
 Documentation     Test E2E della pagina di login del gestionale Angular.
 Resource          ../resources/login_page.resource
+Suite Setup       Apri Browser
+Suite Teardown    Close Browser
 Test Setup        Apri Browser Sul Login
-Test Teardown     Close Browser
+Test Teardown    Chiudi Contesto
 
 
 *** Test Cases ***
